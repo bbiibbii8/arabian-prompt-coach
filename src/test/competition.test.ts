@@ -1,19 +1,23 @@
 import { describe, it, expect } from "vitest";
-import { canPublishToBoard, qualifiesForNoHelpBoard } from "@/lib/competition";
+import { canPublishToBoard } from "@/lib/competition";
+import { HINTS } from "@/lib/hints";
 
 describe("board rules", () => {
   it("publishes a signed entry that improved the score", () => {
-    expect(canPublishToBoard({ name: "سارة", score: 45, helped: false })).toBe(true);
+    expect(canPublishToBoard({ name: "سارة", score: 45 })).toBe(true);
   });
   it("refuses an entry without a name", () => {
-    expect(canPublishToBoard({ name: "   ", score: 100, helped: false })).toBe(false);
+    expect(canPublishToBoard({ name: "   ", score: 100 })).toBe(false);
   });
   it("refuses an entry that did not improve anything", () => {
-    expect(canPublishToBoard({ name: "سارة", score: 0, helped: false })).toBe(false);
+    expect(canPublishToBoard({ name: "سارة", score: 0 })).toBe(false);
   });
-  it("keeps quick-add users out of the no-help competition", () => {
-    expect(qualifiesForNoHelpBoard({ name: "سارة", score: 100, helped: true })).toBe(false);
-    expect(qualifiesForNoHelpBoard({ name: "سارة", score: 100, helped: false })).toBe(true);
-    expect(qualifiesForNoHelpBoard({ name: "", score: 100, helped: false })).toBe(false);
+});
+
+describe("hints", () => {
+  it("stay short clues, not ready-made prompts", () => {
+    for (const h of HINTS) {
+      expect(h.example.trim().split(/\s+/).length).toBeLessThanOrEqual(12);
+    }
   });
 });
