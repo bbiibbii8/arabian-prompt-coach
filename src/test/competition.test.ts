@@ -15,9 +15,9 @@ describe("board rules", () => {
 });
 
 describe("hints", () => {
-  it("stay short clues, not ready-made prompts", () => {
+  it("stay one-word clues, never a written-out prompt", () => {
     for (const h of HINTS) {
-      expect(h.example.trim().split(/\s+/).length).toBeLessThanOrEqual(12);
+      expect(h.trim().split(/\s+/).length).toBe(1);
     }
   });
 });
