@@ -9,7 +9,7 @@ const rows: Entry[] = [
 ];
 
 const csv = boardToCsv(rows);
-const body = csv.replace(/^﻿/, "");
+const body = csv.replace(/^\uFEFF/, "");
 const rawLine = (i: number) => body.split("\r\n")[i];
 const fields = (i: number) => rawLine(i).split(",");
 
