@@ -15,9 +15,15 @@ describe("board rules", () => {
 });
 
 describe("hints", () => {
-  it("stay one-word clues, never a written-out prompt", () => {
+  it("stay short clues that never write the prompt for the student", () => {
+    expect(HINTS).toEqual([
+      "الفئة المستهدفة",
+      "الهدف من التطبيق",
+      "تفاصيل التطبيق",
+      "تصميم وتنسيق التطبيق",
+    ]);
     for (const h of HINTS) {
-      expect(h.trim().split(/\s+/).length).toBe(1);
+      expect(h.trim().split(/\s+/).length).toBeLessThanOrEqual(4);
     }
   });
 });

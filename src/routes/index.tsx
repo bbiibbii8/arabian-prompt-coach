@@ -74,6 +74,7 @@ function Index() {
           </span>
           <h1 className="mt-4 text-4xl font-extrabold md:text-6xl text-gradient">طوّر برومبتك</h1>
           <p className="mt-3 text-muted-foreground">حوّل طلبًا بسيطًا إلى برومبت احترافي، واكتشف كم تحسّن!</p>
+          <p className="mt-2 text-sm text-muted-foreground">أكمل العناصر الأربعة التالية لتصل إلى 100:</p>
         </header>
 
         <section className="card-glass mt-10 p-5 md:p-8">
@@ -189,8 +190,9 @@ function Index() {
             </div>
 
             <p className="text-center text-xs text-muted-foreground">
-              ملاحظة: التقييم يقيس اكتمال البرومبت وفق معايير محددة (المهمة، الجمهور، الأمثلة، التفاصيل، القيود،
-              التنسيق، الأسلوب)، ولا يقيس دقة إجابة الذكاء الاصطناعي لأنه لا يختبر مخرجات فعلية.
+              ملاحظة: التقييم يقيس اكتمال البرومبت وفق معايير محددة (الفئة المستهدفة، الهدف من
+              التطبيق، تفاصيل التطبيق، تصميم وتنسيق التطبيق)، ولا يقيس دقة إجابة الذكاء الاصطناعي
+              لأنه لا يختبر مخرجات فعلية.
             </p>
           </section>
         )}
