@@ -1,14 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CRITERIA, ORIGINAL, compare, encouragement } from "@/lib/evaluate";
+import { canPublishToBoard } from "@/lib/competition";
+import { HINTS } from "@/lib/hints";
+import { fetchBoard, submitEntry, type Entry } from "@/lib/leaderboard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "طوّر برومبتك — أساسيات الذكاء الاصطناعي" },
-      { name: "description", content: "لعبة تفاعلية لتحسين البرومبت وتقييمه بمعايير واضحة." },
+      { title: "طوّر برومبتك — خوارزميات الذكاء الاصطناعي" },
+      {
+        name: "description",
+        content: "لعبة تفاعلية لتحسين البرومبت وتقييمه بمعايير واضحة، مع لوحة منافسة لأفضل برومبت مكتوب بدون مساعدة.",
+      },
       { property: "og:title", content: "طوّر برومبتك" },
-      { property: "og:description", content: "حسّن طلبك للذكاء الاصطناعي واحصل على تقييم فوري." },
+      {
+        property: "og:description",
+        content: "حسّن طلبك للذكاء الاصطناعي واحصل على تقييم فوري، ونافس زملاءك على أحسن برومبت مكتوب بنفسك.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -16,31 +26,51 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const HINTS = [
-  { label: "الجمهور", text: " لطلاب المرحلة الثانوية المبتدئين" },
-  { label: "أمثلة", text: "، مع أمثلة من الحياة اليومية" },
-  { label: "تفاصيل", text: "، يتضمن تعلم الآلة والبيانات والشبكات العصبية" },
-  { label: "قيود", text: "، لا تتجاوز 250 كلمة وتجنّب المصطلحات المعقدة" },
-  { label: "تنسيق", text: "، في نقاط مع عناوين وملخص ختامي" },
-  { label: "أسلوب", text: "، بأسلوب مبسّط وممتع" },
-];
-
 function Index() {
   const [text, setText] = useState(ORIGINAL);
   const [name, setName] = useState("");
   const [res, setRes] = useState<ReturnType<typeof compare> | null>(null);
+  const [send, setSend] = useState<"idle" | "sending" | "ok" | "error">("idle");
+  const [mine, setMine] = useState<number | null>(null);
+  const sentPrompt = useRef("");
+  const qc = useQueryClient();
 
-  const run = () => {
-    setRes(compare(text));
+  const board = useQuery({ queryKey: ["board"], queryFn: fetchBoard, refetchInterval: 5000 });
+
+  const run = async () => {
+    const r = compare(text);
+    setRes(r);
+    setSend("idle");
+    const t = text.trim();
+    if (canPublishToBoard({ name, score: r.b.score }) && t !== sentPrompt.current) {
+      setSend("sending");
+      try {
+        const id = await submitEntry({ name, prompt: t, score: r.b.score, helped: false });
+        sentPrompt.current = t;
+        setMine(id);
+        setSend("ok");
+        qc.invalidateQueries({ queryKey: ["board"] });
+      } catch {
+        setSend("error");
+      }
+    }
     setTimeout(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }), 50);
   };
-  const reset = () => { setText(ORIGINAL); setRes(null); };
+
+  const reset = () => {
+    setText(ORIGINAL);
+    setRes(null);
+    setSend("idle");
+    setMine(null);
+  };
 
   return (
     <div dir="rtl" className="min-h-screen bg-hero font-arabic text-foreground">
       <main className="mx-auto max-w-5xl px-4 py-10 md:py-16">
         <header className="text-center animate-in fade-in slide-in-from-top-4 duration-700">
-          <span className="inline-block rounded-full bg-primary/15 px-4 py-1 text-sm text-primary-glow">فعالية أساسيات الذكاء الاصطناعي</span>
+          <span className="inline-block rounded-full bg-primary/15 px-4 py-1 text-sm text-primary-glow">
+            فعالية خوارزميات الذكاء الاصطناعي
+          </span>
           <h1 className="mt-4 text-4xl font-extrabold md:text-6xl text-gradient">طوّر برومبتك</h1>
           <p className="mt-3 text-muted-foreground">حوّل طلبًا بسيطًا إلى برومبت احترافي، واكتشف كم تحسّن!</p>
         </header>
@@ -49,26 +79,49 @@ function Index() {
           <p className="text-sm text-muted-foreground">الطلب الأصلي:</p>
           <p className="mt-1 text-xl font-bold">«{ORIGINAL}»</p>
 
-          <label className="mt-6 block text-sm font-semibold">اسمك (اختياري)</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="مثلًا: سارة"
-            className="mt-2 w-full rounded-xl border border-border bg-input/40 px-4 py-2 outline-none focus:ring-2 focus:ring-ring" />
+          <label className="mt-6 block text-sm font-semibold">اسمك (للمنافسة)</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={40}
+            placeholder="مثلًا: سارة"
+            className="mt-2 w-full rounded-xl border border-border bg-input/40 px-4 py-2 outline-none focus:ring-2 focus:ring-ring"
+          />
 
           <label className="mt-5 block text-sm font-semibold">اكتب نسختك المحسّنة</label>
-          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6}
-            className="mt-2 w-full resize-y rounded-xl border border-border bg-input/40 p-4 leading-8 outline-none focus:ring-2 focus:ring-ring" />
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={6}
+            className="mt-2 w-full resize-y rounded-xl border border-border bg-input/40 p-4 leading-8 outline-none focus:ring-2 focus:ring-ring"
+          />
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="text-sm text-muted-foreground self-center">أضف سريعًا:</span>
-            {HINTS.map((h) => (
-              <button key={h.label} onClick={() => setText((t) => t.trim() + h.text)}
-                className="rounded-full border border-primary/40 px-3 py-1 text-sm transition hover:bg-primary/20 active:scale-95">+ {h.label}</button>
-            ))}
+          <div className="mt-4 rounded-xl border border-border/60 bg-secondary/30 p-4">
+            <p className="text-sm font-semibold text-primary-glow">تلميحات: أشياء تقدر تضيفها بنفسك</p>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+              {HINTS.map((h) => (
+                <li key={h.label} className="text-sm">
+                  <span className="font-semibold">{h.label}: </span>
+                  <span className="text-muted-foreground">«{h.example}»</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs text-muted-foreground">
+              التلميحات للاطلاع فقط — اكتب عبارتك بنفسك، فالمسابقة على من يكتب أحسن برومبت بدون مساعدة.
+            </p>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <button onClick={run} disabled={!text.trim()}
-              className="btn-hero rounded-xl px-8 py-3 text-lg font-bold transition hover:scale-[1.03] active:scale-95 disabled:opacity-50">قيّم التحسين</button>
-            <button onClick={reset} className="rounded-xl border border-border px-6 py-3 transition hover:bg-secondary">ابدأ من جديد</button>
+            <button
+              onClick={run}
+              disabled={!text.trim()}
+              className="btn-hero rounded-xl px-8 py-3 text-lg font-bold transition hover:scale-[1.03] active:scale-95 disabled:opacity-50"
+            >
+              قيّم التحسين
+            </button>
+            <button onClick={reset} className="rounded-xl border border-border px-6 py-3 transition hover:bg-secondary">
+              ابدأ من جديد
+            </button>
           </div>
         </section>
 
@@ -81,21 +134,42 @@ function Index() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Stat label="فرق النقاط" value={`${res.diff > 0 ? "+" : ""}${res.diff}`} />
-              <Stat label="نسبة التحسن" value={`${res.pct > 0 ? "+" : ""}${res.pct}٪`} />
+              <Stat
+                label="نسبة التحسن"
+                hint="من الفارق المتاح بين الأصلي والعلامة الكاملة"
+                value={`${res.pct > 0 ? "+" : ""}${res.pct}٪`}
+              />
             </div>
 
             <div className="card-glass p-6">
-              <h3 className="font-bold text-lg">العناصر التي أضفتها</h3>
+              <h3 className="text-lg font-bold">العناصر التي أضفتها</h3>
               {res.added.length ? (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {res.added.map((c) => <span key={c.key} className="rounded-full bg-success/20 px-3 py-1 text-sm text-success">✓ {c.label}</span>)}
+                  {res.added.map((c) => (
+                    <span key={c.key} className="rounded-full bg-success/20 px-3 py-1 text-sm text-success">
+                      ✓ {c.label}
+                    </span>
+                  ))}
                 </div>
-              ) : <p className="mt-2 text-muted-foreground">لم تُضف عناصر جديدة بعد.</p>}
+              ) : (
+                <p className="mt-2 text-muted-foreground">لم تُضف عناصر جديدة بعد.</p>
+              )}
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {CRITERIA.map((c) => {
                   const ok = res.b.met.some((m) => m.key === c.key);
-                  return <div key={c.key} className={`flex justify-between rounded-lg px-3 py-2 text-sm ${ok ? "bg-success/10" : "bg-secondary/50 text-muted-foreground"}`}>
-                    <span>{ok ? "✓" : "○"} {c.label}</span><span>{ok ? c.weight : 0}/{c.weight}</span></div>;
+                  return (
+                    <div
+                      key={c.key}
+                      className={`flex justify-between rounded-lg px-3 py-2 text-sm ${ok ? "bg-success/10" : "bg-secondary/50 text-muted-foreground"}`}
+                    >
+                      <span>
+                        {ok ? "✓" : "○"} {c.label}
+                      </span>
+                      <span>
+                        {ok ? c.weight : 0}/{c.weight}
+                      </span>
+                    </div>
+                  );
                 })}
               </div>
             </div>
@@ -103,26 +177,102 @@ function Index() {
             <div className="card-glass p-6 text-center">
               <p className="text-xl font-bold">{encouragement(res.b.score, name)}</p>
               {res.b.missing[0] ? (
-                <p className="mt-3 text-muted-foreground"><span className="font-semibold text-primary-glow">اقتراح للتحسين: </span>{res.b.missing[0].tip}</p>
-              ) : <p className="mt-3 text-muted-foreground"><span className="font-semibold text-primary-glow">اقتراح: </span>جرّب البرومبت فعليًا على أداة ذكاء اصطناعي وقارن الإجابة بما توقعته.</p>}
+                <p className="mt-3 text-muted-foreground">
+                  <span className="font-semibold text-primary-glow">اقتراح للتحسين: </span>
+                  {res.b.missing[0].tip}
+                </p>
+              ) : (
+                <p className="mt-3 text-muted-foreground">
+                  <span className="font-semibold text-primary-glow">اقتراح: </span>
+                  جرّب البرومبت فعليًا على أداة ذكاء اصطناعي وقارن الإجابة بما توقعته.
+                </p>
+              )}
+              <p className="mt-4 text-sm">
+                {send === "sending" && "جارٍ إرسال نتيجتك إلى لوحة المنافسة…"}
+                {send === "ok" && "✓ نُشرت نتيجتك في لوحة المنافسة."}
+                {send === "error" && "لم يُرسل اسمك للوحة، جرّب مرة أخرى بعد لحظات."}
+                {send === "idle" && !name.trim() && "أدخل اسمك قبل التقييم لتظهر في لوحة المنافسة."}
+              </p>
             </div>
 
             <p className="text-center text-xs text-muted-foreground">
-              ملاحظة: التقييم يقيس اكتمال البرومبت وفق معايير محددة (المهمة، الجمهور، الأمثلة، التفاصيل، القيود، التنسيق، الأسلوب)، ولا يقيس دقة إجابة الذكاء الاصطناعي لأنه لا يختبر مخرجات فعلية.
+              ملاحظة: التقييم يقيس اكتمال البرومبت وفق معايير محددة (المهمة، الجمهور، الأمثلة، التفاصيل، القيود،
+              التنسيق، الأسلوب)، ولا يقيس دقة إجابة الذكاء الاصطناعي لأنه لا يختبر مخرجات فعلية.
             </p>
           </section>
         )}
+
+        <Board rows={board.data ?? []} loading={board.isPending} mine={mine} />
       </main>
     </div>
   );
 }
 
-function PromptCard({ title, text, score, highlight }: { title: string; text: string; score: number; highlight?: boolean }) {
+function Board({ rows, loading, mine }: { rows: Entry[]; loading: boolean; mine: number | null }) {
+  const top = rows[0];
+  return (
+    <section className="card-glass mt-10 p-5 md:p-8 animate-in fade-in duration-700">
+      <h2 className="text-2xl font-extrabold text-gradient">لوحة المنافسة 🏆</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        مين كتب أحسن برومبت بدون مساعدة؟ الأعلى نقطةً يفوز — كل طالب يكتب نصه بنفسه.
+      </p>
+
+      {loading ? (
+        <p className="mt-6 text-muted-foreground">جارٍ تحميل اللوحة…</p>
+      ) : rows.length === 0 ? (
+        <p className="mt-6 text-muted-foreground">لا توجد مشاركات بعد — كن أول المتصدرين!</p>
+      ) : (
+        <>
+          <ol className="mt-5 space-y-2">
+            {rows.map((e, i) => (
+              <li
+                key={e.id}
+                className={`flex items-center justify-between gap-3 rounded-xl px-4 py-3 ${
+                  mine === e.id ? "ring-2 ring-primary" : ""
+                } ${i === 0 ? "bg-primary/10" : "bg-secondary/40"}`}
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="w-8 shrink-0 text-center text-lg font-extrabold">
+                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                  </span>
+                  <span className="truncate font-semibold">{e.name}</span>
+                </span>
+                <span className="shrink-0 text-lg font-extrabold text-gradient">{e.score}</span>
+              </li>
+            ))}
+          </ol>
+          {top && (
+            <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <p className="text-sm font-semibold text-primary-glow">برومبت المركز الأول ({top.name})</p>
+              <p className="mt-2 whitespace-pre-wrap leading-8 text-muted-foreground">{top.prompt}</p>
+            </div>
+          )}
+          <p className="mt-4 text-center text-xs text-muted-foreground">عدد المشاركين: {rows.length}</p>
+        </>
+      )}
+    </section>
+  );
+}
+
+function PromptCard({
+  title,
+  text,
+  score,
+  highlight,
+}: {
+  title: string;
+  text: string;
+  score: number;
+  highlight?: boolean;
+}) {
   return (
     <div className={`card-glass p-6 ${highlight ? "ring-2 ring-primary" : ""}`}>
       <div className="flex items-center justify-between">
         <h3 className="font-bold">{title}</h3>
-        <span className="text-3xl font-extrabold text-gradient">{score}<span className="text-base text-muted-foreground">/100</span></span>
+        <span className="text-3xl font-extrabold text-gradient">
+          {score}
+          <span className="text-base text-muted-foreground">/100</span>
+        </span>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary">
         <div className="h-full bg-gradient-primary transition-all duration-1000" style={{ width: `${score}%` }} />
@@ -132,11 +282,14 @@ function PromptCard({ title, text, score, highlight }: { title: string; text: st
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="card-glass p-6 text-center">
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 text-4xl font-extrabold text-gradient" dir="ltr">{value}</p>
+      <p className="mt-1 text-4xl font-extrabold text-gradient" dir="ltr">
+        {value}
+      </p>
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
