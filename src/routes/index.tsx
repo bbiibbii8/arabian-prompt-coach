@@ -5,7 +5,7 @@ import { CRITERIA, ORIGINAL, compare, encouragement } from "@/lib/evaluate";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "طوّر برومبتك — أساسيات الذكاء الاصطناعي" },
+      { title: "طوّر برومبتك — خوارزميات الذكاء الاصطناعي" },
       { name: "description", content: "لعبة تفاعلية لتحسين البرومبت وتقييمه بمعايير واضحة." },
       { property: "og:title", content: "طوّر برومبتك" },
       { property: "og:description", content: "حسّن طلبك للذكاء الاصطناعي واحصل على تقييم فوري." },
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
 const HINTS = [
   { label: "الجمهور", text: " لطلاب المرحلة الثانوية المبتدئين" },
   { label: "أمثلة", text: "، مع أمثلة من الحياة اليومية" },
-  { label: "تفاصيل", text: "، يتضمن تعلم الآلة والبيانات والشبكات العصبية" },
+  { label: "تفاصيل", text: "، يتضمن المستخدم المستهدف والميزات الرئيسية وخوارزمية التوصية" },
   { label: "قيود", text: "، لا تتجاوز 250 كلمة وتجنّب المصطلحات المعقدة" },
   { label: "تنسيق", text: "، في نقاط مع عناوين وملخص ختامي" },
   { label: "أسلوب", text: "، بأسلوب مبسّط وممتع" },
@@ -40,7 +40,7 @@ function Index() {
     <div dir="rtl" className="min-h-screen bg-hero font-arabic text-foreground">
       <main className="mx-auto max-w-5xl px-4 py-10 md:py-16">
         <header className="text-center animate-in fade-in slide-in-from-top-4 duration-700">
-          <span className="inline-block rounded-full bg-primary/15 px-4 py-1 text-sm text-primary-glow">فعالية أساسيات الذكاء الاصطناعي</span>
+          <span className="inline-block rounded-full bg-primary/15 px-4 py-1 text-sm text-primary-glow">فعالية خوارزميات الذكاء الاصطناعي</span>
           <h1 className="mt-4 text-4xl font-extrabold md:text-6xl text-gradient">طوّر برومبتك</h1>
           <p className="mt-3 text-muted-foreground">حوّل طلبًا بسيطًا إلى برومبت احترافي، واكتشف كم تحسّن!</p>
         </header>
