@@ -17,12 +17,12 @@ describe("evaluate", () => {
     expect(r.diff).toBe(100 - r.a.score);
   });
   it("percentage is the share of the achievable gap that was closed", () => {
-    const r = compare("تطبيق ذكي لطلاب المرحلة الثانوية");
+    const r = compare("تطبيق ذكي لطلاب المرحلة الثانوية المبتدئين");
     expect(r.b.score).toBe(25);
     expect(r.pct).toBe(25);
   });
   it("percentage stays finite when nothing can be improved", () => {
-    const r = compare("تطبيق ذكي لطلاب المرحلة الثانوية");
+    const r = compare("تطبيق ذكي لطلاب المرحلة الثانوية المبتدئين");
     expect(r.a.score).toBe(0);
     expect(Number.isFinite(r.pct)).toBe(true);
   });
