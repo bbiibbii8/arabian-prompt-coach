@@ -39,3 +39,14 @@ export async function fetchBoard(): Promise<Entry[]> {
   if (error) throw error;
   return (data ?? []) as Entry[];
 }
+
+// Full list for the end-of-event CSV export (no 50-row board limit).
+export async function fetchAllEntries(): Promise<Entry[]> {
+  const { data, error } = await supabase
+    .from("prompt_entries")
+    .select("id,name,prompt,score,helped,created_at")
+    .order("score", { ascending: false })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Entry[];
+}
