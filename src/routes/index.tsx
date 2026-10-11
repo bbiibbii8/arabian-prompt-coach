@@ -81,7 +81,7 @@ function Index() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Stat label="فرق النقاط" value={`${res.diff > 0 ? "+" : ""}${res.diff}`} />
-              <Stat label="نسبة التحسن" value={`${res.pct > 0 ? "+" : ""}${res.pct}٪`} />
+              <Stat label="نسبة التحسن" value={res.a.score > 0 ? `${res.pct > 0 ? "+" : ""}${res.pct}٪` : `من ${res.a.score} إلى ${res.b.score}`} />
             </div>
 
             <div className="card-glass p-6">

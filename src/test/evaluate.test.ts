@@ -11,4 +11,10 @@ describe("evaluate", () => {
     expect(r.b.score).toBe(100);
     expect(r.diff).toBe(100 - r.a.score);
   });
+  it("keeps the improvement percentage finite when the original scores 0", () => {
+    const r = compare("اشرح فكرة تطبيق ذكي لطلاب المرحلة الثانوية المبتدئين في نقاط");
+    expect(r.a.score).toBe(0);
+    expect(Number.isFinite(r.pct)).toBe(true);
+    expect(r.pct).toBe(0);
+  });
 });
