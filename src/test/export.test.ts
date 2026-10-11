@@ -8,28 +8,28 @@ const rows: Entry[] = [
   { id: 3, name: "=1+1", prompt: "ص", score: 0, helped: false, created_at: "2026-10-11T11:25:00.000Z" },
 ];
 
-const line = (csv: string, index: number) => csv.replace(/^\uFEFF/, "").split("\r\n")[index].split(",");
+const csv = boardToCsv(rows);
+const body = csv.replace(/^﻿/, "");
+const rawLine = (i: number) => body.split("\r\n")[i];
+const fields = (i: number) => rawLine(i).split(",");
 
 describe("CSV export", () => {
   it("starts with a BOM and an Arabic header line", () => {
-    const csv = boardToCsv(rows);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
-    expect(csv.replace(/^\uFEFF/, "").split("\r\n")[0]).toBe("الترتيب,الاسم,الدرجة من 100,الوقت");
+    expect(body.split("\r\n")[0]).toBe("الترتيب,الاسم,الدرجة من 100,الوقت");
   });
   it("ranks students by score and keeps the score as a bare number", () => {
-    const csv = boardToCsv(rows);
-    expect(line(csv, 1).slice(0, 3)).toEqual(["1", "سارة", "100"]);
-    expect(line(csv, 2).slice(0, 1)).toEqual(["2"]);
-    expect(line(csv, 3).slice(-1)).toEqual(["0"]);
+    expect(fields(1).slice(0, 3)).toEqual(["1", "سارة", "100"]);
+    expect(fields(2)[0]).toBe("2");
+    expect(fields(3)[2]).toBe("0");
+  });
+  it("writes the time as YYYY-MM-DD HH:MM", () => {
+    expect(fields(1)[3]).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
   });
   it("quotes a name holding a comma or a quote", () => {
-    expect(csv_line(boardToCsv(rows), 2)).toBe('2,"خالد, ""أبو",75,');
+    expect(rawLine(2).startsWith('2,"خالد, ""أبو",75,')).toBe(true);
   });
   it("never lets a name open as a formula", () => {
-    expect(line(csv, 3)[1]).toBe(" =1+1");
+    expect(fields(3)[1]).toBe(" =1+1");
   });
 });
-
-function csv_line(csv: string, index: number): string {
-  return csv.replace(/^\uFEFF/, "").split("\r\n")[index];
-}
