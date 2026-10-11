@@ -79,7 +79,7 @@ function Index() {
           <p className="text-sm text-muted-foreground">الطلب الأصلي:</p>
           <p className="mt-1 text-xl font-bold">«{ORIGINAL}»</p>
 
-          <label className="mt-6 block text-sm font-semibold">اسمك (للمنافسة)</label>
+          <label className="mt-6 block text-sm font-semibold">اسمك (اختياري)</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -87,6 +87,7 @@ function Index() {
             placeholder="مثلًا: سارة"
             className="mt-2 w-full rounded-xl border border-border bg-input/40 px-4 py-2 outline-none focus:ring-2 focus:ring-ring"
           />
+          <p className="mt-1 text-xs text-muted-foreground">بدون اسم لن تظهر في لوحة المنافسة.</p>
 
           <label className="mt-5 block text-sm font-semibold">اكتب نسختك المحسّنة</label>
           <textarea
@@ -96,20 +97,11 @@ function Index() {
             className="mt-2 w-full resize-y rounded-xl border border-border bg-input/40 p-4 leading-8 outline-none focus:ring-2 focus:ring-ring"
           />
 
-          <div className="mt-4 rounded-xl border border-border/60 bg-secondary/30 p-4">
-            <p className="text-sm font-semibold text-primary-glow">تلميحات: أشياء تقدر تضيفها بنفسك</p>
-            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-              {HINTS.map((h) => (
-                <li key={h.label} className="text-sm">
-                  <span className="font-semibold">{h.label}: </span>
-                  <span className="text-muted-foreground">«{h.example}»</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-xs text-muted-foreground">
-              التلميحات للاطلاع فقط — اكتب عبارتك بنفسك، فالمسابقة على من يكتب أحسن برومبت بدون مساعدة.
-            </p>
-          </div>
+          <p className="mt-4 rounded-xl border border-border/60 bg-secondary/30 px-4 py-3 text-sm">
+            <span className="font-semibold text-primary-glow">تلميحات: </span>
+            <span className="text-muted-foreground">{HINTS.join(" · ")}</span>
+          </p>
+
 
           <div className="mt-6 flex flex-wrap gap-3">
             <button
