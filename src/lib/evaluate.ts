@@ -42,7 +42,9 @@ export function compare(improved: string) {
   const a = evaluate(ORIGINAL);
   const b = evaluate(improved);
   const diff = b.score - a.score;
-  const pct = a.score > 0 ? Math.round((diff / a.score) * 100) : 0;
+  // Share of the achievable gap (from the original score up to 100) that the student closed.
+  const gap = 100 - a.score;
+  const pct = gap > 0 ? Math.round((diff / gap) * 100) : 0;
   const added = b.met.filter((c) => !a.met.some((m) => m.key === c.key));
   return { a, b, diff, pct, added };
 }
