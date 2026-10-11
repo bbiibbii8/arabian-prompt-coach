@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CRITERIA, ORIGINAL, compare, encouragement } from "@/lib/evaluate";
 import { canPublishToBoard } from "@/lib/competition";
+import { HINTS } from "@/lib/hints";
 import { fetchBoard, submitEntry, type Entry } from "@/lib/leaderboard";
 
 export const Route = createFileRoute("/")({
@@ -11,12 +12,12 @@ export const Route = createFileRoute("/")({
       { title: "طوّر برومبتك — خوارزميات الذكاء الاصطناعي" },
       {
         name: "description",
-        content: "لعبة تفاعلية لتحسين البرومبت وتقييمه بمعايير واضحة، مع لوحة منافسة لأفضل برومبت بدون مساعدة.",
+        content: "لعبة تفاعلية لتحسين البرومبت وتقييمه بمعايير واضحة، مع لوحة منافسة لأفضل برومبت مكتوب بدون مساعدة.",
       },
       { property: "og:title", content: "طوّر برومبتك" },
       {
         property: "og:description",
-        content: "حسّن طلبك للذكاء الاصطناعي واحصل على تقييم فوري، ونافس زملاءك على أفضل برومبت بدون مساعدة.",
+        content: "حسّن طلبك للذكاء الاصطناعي واحصل على تقييم فوري، ونافس زملاءك على أحسن برومبت مكتوب بنفسك.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -25,19 +26,9 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const HINTS = [
-  { label: "الجمهور", text: " لطلاب المرحلة الثانوية المبتدئين" },
-  { label: "أمثلة", text: "، مع أمثلة من الحياة اليومية" },
-  { label: "تفاصيل", text: "، يتضمن المستخدم المستهدف والميزات الرئيسية وخوارزمية التوصية" },
-  { label: "قيود", text: "، لا تتجاوز 250 كلمة وتجنّب المصطلحات المعقدة" },
-  { label: "تنسيق", text: "، في نقاط مع عناوين وملخص ختامي" },
-  { label: "أسلوب", text: "، بأسلوب مبسّط وممتع" },
-];
-
 function Index() {
   const [text, setText] = useState(ORIGINAL);
   const [name, setName] = useState("");
-  const [helped, setHelped] = useState(false);
   const [res, setRes] = useState<ReturnType<typeof compare> | null>(null);
   const [send, setSend] = useState<"idle" | "sending" | "ok" | "error">("idle");
   const [mine, setMine] = useState<number | null>(null);
@@ -46,20 +37,15 @@ function Index() {
 
   const board = useQuery({ queryKey: ["board"], queryFn: fetchBoard, refetchInterval: 5000 });
 
-  const addHint = (t: string) => {
-    setHelped(true);
-    setText((prev) => prev.trim() + t);
-  };
-
   const run = async () => {
     const r = compare(text);
     setRes(r);
     setSend("idle");
     const t = text.trim();
-    if (canPublishToBoard({ name, score: r.b.score, helped }) && t !== sentPrompt.current) {
+    if (canPublishToBoard({ name, score: r.b.score }) && t !== sentPrompt.current) {
       setSend("sending");
       try {
-        const id = await submitEntry({ name, prompt: t, score: r.b.score, helped });
+        const id = await submitEntry({ name, prompt: t, score: r.b.score, helped: false });
         sentPrompt.current = t;
         setMine(id);
         setSend("ok");
@@ -74,12 +60,9 @@ function Index() {
   const reset = () => {
     setText(ORIGINAL);
     setRes(null);
-    setHelped(false);
     setSend("idle");
     setMine(null);
   };
-
-  const rows = board.data ?? [];
 
   return (
     <div dir="rtl" className="min-h-screen bg-hero font-arabic text-foreground">
@@ -113,23 +96,20 @@ function Index() {
             className="mt-2 w-full resize-y rounded-xl border border-border bg-input/40 p-4 leading-8 outline-none focus:ring-2 focus:ring-ring"
           />
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="self-center text-sm text-muted-foreground">أضف سريعًا:</span>
-            {HINTS.map((h) => (
-              <button
-                key={h.label}
-                onClick={() => addHint(h.text)}
-                className="rounded-full border border-primary/40 px-3 py-1 text-sm transition hover:bg-primary/20 active:scale-95"
-              >
-                + {h.label}
-              </button>
-            ))}
+          <div className="mt-4 rounded-xl border border-border/60 bg-secondary/30 p-4">
+            <p className="text-sm font-semibold text-primary-glow">تلميحات: أشياء تقدر تضيفها بنفسك</p>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+              {HINTS.map((h) => (
+                <li key={h.label} className="text-sm">
+                  <span className="font-semibold">{h.label}: </span>
+                  <span className="text-muted-foreground">«{h.example}»</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs text-muted-foreground">
+              التلميحات للاطلاع فقط — اكتب عبارتك بنفسك، فالمسابقة على من يكتب أحسن برومبت بدون مساعدة.
+            </p>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {helped
-              ? "استخدمت أزرار الإضافة، لذلك ستظهر في لوحة «الكل» فقط."
-              : "أنت الآن في منافسة «بدون مساعدة» — لا تضغط أزرار الإضافة إذا أردت البقاء فيها."}
-          </p>
 
           <div className="mt-6 flex flex-wrap gap-3">
             <button
@@ -222,50 +202,29 @@ function Index() {
           </section>
         )}
 
-        <Board rows={rows} loading={board.isPending} mine={mine} />
+        <Board rows={board.data ?? []} loading={board.isPending} mine={mine} />
       </main>
     </div>
   );
 }
 
 function Board({ rows, loading, mine }: { rows: Entry[]; loading: boolean; mine: number | null }) {
-  const [noHelpOnly, setNoHelpOnly] = useState(true);
-  const shown = noHelpOnly ? rows.filter((r) => !r.helped) : rows;
-  const top = shown[0];
-
+  const top = rows[0];
   return (
     <section className="card-glass mt-10 p-5 md:p-8 animate-in fade-in duration-700">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-extrabold text-gradient">لوحة المنافسة 🏆</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            من كتب أحسن برومبت؟ الأعلى نقطةً يفوز، و«بدون مساعدة» تعني أنه لم يستخدم أزرار الإضافة السريعة.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setNoHelpOnly(true)}
-            className={`rounded-full px-4 py-1.5 text-sm transition ${noHelpOnly ? "bg-primary text-primary-foreground" : "border border-border hover:bg-secondary"}`}
-          >
-            بدون مساعدة
-          </button>
-          <button
-            onClick={() => setNoHelpOnly(false)}
-            className={`rounded-full px-4 py-1.5 text-sm transition ${!noHelpOnly ? "bg-primary text-primary-foreground" : "border border-border hover:bg-secondary"}`}
-          >
-            الكل
-          </button>
-        </div>
-      </div>
+      <h2 className="text-2xl font-extrabold text-gradient">لوحة المنافسة 🏆</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        مين كتب أحسن برومبت بدون مساعدة؟ الأعلى نقطةً يفوز — كل طالب يكتب نصه بنفسه.
+      </p>
 
       {loading ? (
         <p className="mt-6 text-muted-foreground">جارٍ تحميل اللوحة…</p>
-      ) : shown.length === 0 ? (
-        <p className="mt-6 text-muted-foreground">لا توجد مشاركات في هذه اللوحة بعد — كن أول المتصدرين!</p>
+      ) : rows.length === 0 ? (
+        <p className="mt-6 text-muted-foreground">لا توجد مشاركات بعد — كن أول المتصدرين!</p>
       ) : (
         <>
           <ol className="mt-5 space-y-2">
-            {shown.map((e, i) => (
+            {rows.map((e, i) => (
               <li
                 key={e.id}
                 className={`flex items-center justify-between gap-3 rounded-xl px-4 py-3 ${
@@ -277,15 +236,6 @@ function Board({ rows, loading, mine }: { rows: Entry[]; loading: boolean; mine:
                     {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
                   </span>
                   <span className="truncate font-semibold">{e.name}</span>
-                  {e.helped ? (
-                    <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
-                      بمساعدة
-                    </span>
-                  ) : (
-                    <span className="shrink-0 rounded-full bg-success/20 px-2 py-0.5 text-xs text-success">
-                      بدون مساعدة
-                    </span>
-                  )}
                 </span>
                 <span className="shrink-0 text-lg font-extrabold text-gradient">{e.score}</span>
               </li>
@@ -297,7 +247,7 @@ function Board({ rows, loading, mine }: { rows: Entry[]; loading: boolean; mine:
               <p className="mt-2 whitespace-pre-wrap leading-8 text-muted-foreground">{top.prompt}</p>
             </div>
           )}
-          <p className="mt-4 text-center text-xs text-muted-foreground">عدد المشاركين: {shown.length}</p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">عدد المشاركين: {rows.length}</p>
         </>
       )}
     </section>
